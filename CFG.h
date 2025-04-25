@@ -343,76 +343,69 @@ public:
         }
     }
   
-    void printParsingTable() const {    
+    void printParsingTable() const {
         if (productions.empty()) {
-            cout << "\033[0;31mError: No CFG found!\033[0m" << endl;
+            cout << "Error: No CFG found!" << endl;
             return;
         }
-
-        // using a set takay no repeatitions
+    
+        // Collect all non-terminals and terminals
         set<string> terminals, non_terminals;
         for (const auto& entry : parsing_table) {
-            non_terminals.insert(entry.first.first);  // row headers pr Non-terminals
-            terminals.insert(entry.first.second);    // column headers pr Terminals
+            non_terminals.insert(entry.first.first);
+            terminals.insert(entry.first.second);
         }
     
-        // sabki width takay beautiful table
-        unordered_map<string, size_t> col_width;
-        int min_width = 12; // min width for columns
-    
+        // Calculate appropriate column width
+        const int nonterm_width = 15;
+        const int term_width = 20;
+        
+        // Total width calculation
+        int total_width = nonterm_width + (term_width * terminals.size()) + terminals.size() + 1;
+        
+        // Print header
+        cout << string(total_width, '=') << endl;
+        cout << "LL(1) PARSING TABLE" << endl;
+        cout << string(total_width, '=') << endl;
+        
+        // Print column headers
+        cout << left << setw(nonterm_width) << "NON-TERMINAL";
+        cout << "|";
         for (const string& terminal : terminals) {
-            col_width[terminal] = terminal.size() + 3; 
+            cout << setw(term_width) << terminal << "|";
         }
-    
-        for (const auto& entry : parsing_table) {
-            string production = entry.first.first + " -> ";
-            for (const string& symbol : entry.second) {
-                production += symbol + " ";
-            }
-            col_width[entry.first.second] = max(col_width[entry.first.second], production.size() + 2);
+        cout << endl;
+        
+        // Print separator
+        cout << string(nonterm_width, '-');
+        for (size_t i = 0; i < terminals.size(); i++) {
+            cout << "+" << string(term_width, '-');
         }
-
-        // total width takay dash dash print ho
-        int total_width = min_width + 4;
-        for (const string& terminal : terminals) {
-            total_width += col_width[terminal] + 2;
-        }
-        cout << string(total_width / 2 - 11, '=') << "  LL(1) Parsing Table " << string(total_width / 2 - 11, '=') << "\n";
-    
-        // column headerssss
-        cout << setw(min_width) << left << "| Non-Terminal |";
-        for (const string& terminal : terminals) {
-            cout << " " << setw(col_width[terminal] - 1) << left << terminal << " |";
-        }
-        cout << "\n";
-    
-        cout << string(total_width, '=') << "\n";
-    
-        // this is the actual printing part
-        for (const string& row_header : non_terminals) {
-            cout << "| " << setw(min_width) << left << row_header << " |";
-    
-            for (const string& terminal : terminals) {
-
-                auto key = make_pair(row_header, terminal);
-
+        cout << "+" << endl;
+        
+        // Print table contents
+        for (const string& nt : non_terminals) {
+            cout << left << setw(nonterm_width) << nt << "|";
+            
+            for (const string& t : terminals) {
+                auto key = make_pair(nt, t);
+                
                 if (parsing_table.find(key) != parsing_table.end()) {
-                    string production = row_header + " -> ";
+                    string production = nt + " -> ";
                     for (const string& symbol : parsing_table.at(key)) {
                         production += symbol + " ";
                     }
-                    cout << setw(col_width[terminal]) << left << production << " |";
-                } 
-                else {
-                    cout << setw(col_width[terminal]) << left << "-" << " |";
+                    cout << setw(term_width) << production;
+                } else {
+                    cout << setw(term_width) << " ";
                 }
-
+                cout << "|";
             }
-            cout << "\n";
+            cout << endl;
         }
-    
-        // table ka bottom border
-        cout << string(total_width, '=') << "\n";
+        
+        // Print footer
+        cout << string(total_width, '=') << endl;
     }
     
     private:
