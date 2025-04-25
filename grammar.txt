@@ -1,0 +1,12 @@
+PROG -> STMT PROG | ε
+STMT -> DECL | ASSIGN | IF
+DECL -> int ID ;
+ASSIGN -> ID = EXPR ;
+EXPR -> TERM EXPR_TAIL
+EXPR_TAIL -> + TERM EXPR_TAIL | - TERM EXPR_TAIL | ε
+TERM -> ID | NUM
+IF -> if ( COND ) { PROG }
+COND -> ID REL_OP ID | ID REL_OP NUM | NUM REL_OP ID | NUM REL_OP NUM
+REL_OP -> > | < | ==
+ID -> x | y | z
+NUM -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
