@@ -55,9 +55,9 @@ void Parser::parseString(const string& input, int lineNum) {
     bool hasError = false;
     
     // Print table header for parsing steps
-    cout << "\n\033[1;34m+-----------------------+----------------------+------------------------+\033[0m";
-    cout << "\n\033[1;34m| Stack                 | Current Input        | Action                 |\033[0m";
-    cout << "\n\033[1;34m+-----------------------+----------------------+------------------------+\033[0m";
+    cout << "\n\033[1;34m+-------------------------------+----------------------+------------------------+\033[0m";
+    cout << "\n\033[1;34m| Stack                         | Current Input        | Action                 |\033[0m";
+    cout << "\n\033[1;34m+-------------------------------+----------------------+------------------------+\033[0m";
 
     // Parsing algorithm
     while (!parsingStack.empty() && inputPos < tokens.size()) {
@@ -67,8 +67,12 @@ void Parser::parseString(const string& input, int lineNum) {
         string stackContent = getStackContents(parsingStack);
         
         // Format and print current state
-        cout << "\n\033[0m| " << left << setw(21) << stackContent;
-        cout << "| " << left << setw(20) << currentInput;
+        cout << "\n\033[0m| " << left << setw(30) << stackContent;
+        string remainingInput = "";
+        for (int i = inputPos; i < tokens.size(); i++) {
+            remainingInput += tokens[i] + " ";
+        }
+        cout << "| " << left << setw(20) << remainingInput;
         
         string top = parsingStack.top();
         parsingStack.pop();
@@ -77,6 +81,7 @@ void Parser::parseString(const string& input, int lineNum) {
         if (top == "$") {
             if (currentInput == "$") {
                 cout << "| Accept                 |";
+                inputPos++; // Increment to show we've consumed the final $ token
                 break;
             } else {
                 cout << "| \033[31mError: Expected end of input\033[0m |";
@@ -85,7 +90,6 @@ void Parser::parseString(const string& input, int lineNum) {
                 break;
             }
         }
-        
         // Case 2: Top is a terminal
         else if (cfg->isTerminal(top)) {
             if (top == currentInput) {
@@ -136,13 +140,13 @@ void Parser::parseString(const string& input, int lineNum) {
     // Final result for this line
     if (hasError) {
         cout << "\033[31mLine " << lineNum << ": Parsing failed with errors.\033[0m\n";
-    } else if (parsingStack.top() == "$" && tokens[inputPos] == "$") {
+    } else if (parsingStack.empty() && tokens[inputPos] == "$") {  // Changed condition here
         cout << "\033[32mLine " << lineNum << ": Parsing successful!\033[0m\n";
     } else {
         errorCount++;
         cout << "\033[31mLine " << lineNum << ": Parsing failed. ";
         
-        if (!parsingStack.empty() && parsingStack.top() != "$") {
+        if (!parsingStack.empty()) {
             cout << "Unexpected end of input. Expected: " << parsingStack.top() << "\033[0m\n";
         } else if (inputPos < tokens.size() - 1) {
             cout << "Extra input after parsing completed.\033[0m\n";

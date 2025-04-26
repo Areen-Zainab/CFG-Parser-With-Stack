@@ -19,12 +19,12 @@ int main() {
     cout << "\033[32m\nOriginal CFG:\033[0m\n";
     cfg.print();
 
-    cout << "\033[32m\nStep 1: Applying Left Factoring\033[0m\n";
-    cfg.LeftFactoring();
+    cout << "\033[32m\nStep 1: Removing Left Recursion\033[0m\n";
+    cfg.LeftRecursion();
     cfg.print();
 
-    cout << "\033[32m\nStep 2: Removing Left Recursion\033[0m\n";
-    cfg.LeftRecursion();
+    cout << "\033[32m\nStep 2: Applying Left Factoring\033[0m\n";
+    cfg.LeftFactoring();
     cfg.print();
 
     cout << "\033[32m\nStep 3: Computing FIRST Sets\033[0m\n";
@@ -37,7 +37,7 @@ int main() {
 
     cout << "\033[32m\nStep 5: Constructing LL(1) Parsing Table\033[0m\n";
     cfg.constructParsingTable();
-    cfg.printParsingTable();
+    //cfg.printParsingTable();
 
     // Create parser and parse input file
     Parser parser(&cfg);
