@@ -68,9 +68,12 @@ void Parser::parseString(const string& input, int lineNum) {
         
         // Format and print current state
         cout << "\n\033[0m| " << left << setw(30) << stackContent;
+
+        // Display remaining input
         string remainingInput = "";
         for (int i = inputPos; i < tokens.size(); i++) {
-            remainingInput += tokens[i] + " ";
+            remainingInput += tokens[i];
+            if (i < tokens.size() - 1) remainingInput += " ";
         }
         cout << "| " << left << setw(20) << remainingInput;
         
@@ -82,6 +85,8 @@ void Parser::parseString(const string& input, int lineNum) {
             if (currentInput == "$") {
                 cout << "| Accept                 |";
                 inputPos++; // Increment to show we've consumed the final $ token
+                // We're emptying the stack here, which means successful parsing
+                parsingStack = stack<string>(); // Clear the stack
                 break;
             } else {
                 cout << "| \033[31mError: Expected end of input\033[0m |";
@@ -90,6 +95,7 @@ void Parser::parseString(const string& input, int lineNum) {
                 break;
             }
         }
+
         // Case 2: Top is a terminal
         else if (cfg->isTerminal(top)) {
             if (top == currentInput) {
@@ -138,22 +144,22 @@ void Parser::parseString(const string& input, int lineNum) {
     cout << "\n\033[1;34m+-----------------------+----------------------+------------------------+\033[0m\n";
     
     // Final result for this line
-    if (hasError) {
-        cout << "\033[31mLine " << lineNum << ": Parsing failed with errors.\033[0m\n";
-    } else if (parsingStack.empty() && tokens[inputPos] == "$") {  // Changed condition here
-        cout << "\033[32mLine " << lineNum << ": Parsing successful!\033[0m\n";
-    } else {
-        errorCount++;
-        cout << "\033[31mLine " << lineNum << ": Parsing failed. ";
-        
-        if (!parsingStack.empty()) {
-            cout << "Unexpected end of input. Expected: " << parsingStack.top() << "\033[0m\n";
-        } else if (inputPos < tokens.size() - 1) {
-            cout << "Extra input after parsing completed.\033[0m\n";
+        if (hasError) {
+            cout << "\033[31mLine " << lineNum << ": Parsing failed with errors.\033[0m\n";
+        } else if (parsingStack.empty() && inputPos >= tokens.size() - 1) {  // Successfully processed all input
+            cout << "\033[32mLine " << lineNum << ": Parsing successful!\033[0m\n";
         } else {
-            cout << "Unknown error.\033[0m\n";
+            errorCount++;
+            cout << "\033[31mLine " << lineNum << ": Parsing failed. ";
+            
+            if (!parsingStack.empty()) {
+                cout << "Unexpected end of input. Expected: " << parsingStack.top() << "\033[0m\n";
+            } else if (inputPos < tokens.size() - 1) {
+                cout << "Extra input after parsing completed.\033[0m\n";
+            } else {
+                cout << "Unknown error.\033[0m\n";
+            }
         }
-    }
 }
 
 string Parser::getStackContents(stack<string> stk) {
