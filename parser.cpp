@@ -35,6 +35,31 @@ void Parser::parseFile(const string& filename) {
     file.close();
 }
 
+// First, make sure your Parser.h has the appropriate function declaration:
+// In Parser.h, you should have something like:
+// string getStackContents(stack<string> stk);
+
+// Then implement the function in Parser.cpp:
+string Parser::getStackContents(stack<string> stk) {
+    string result = "";
+    vector<string> items;
+    
+    // Extract items from stack
+    while (!stk.empty()) {
+        items.push_back(stk.top());
+        stk.pop();
+    }
+    
+    // Reconstruct the stack content string (in correct order from bottom to top)
+    for (int i = items.size() - 1; i >= 0; i--) {
+        result += items[i];
+        if (i > 0) result += " ";
+    }
+    
+    return result;
+}
+
+// And here's the fixed parseString method:
 void Parser::parseString(const string& input, int lineNum) {
     istringstream iss(input);
     vector<string> tokens;
@@ -52,7 +77,8 @@ void Parser::parseString(const string& input, int lineNum) {
     parsingStack.push(startSymbol);
 
     int inputPos = 0;
-    bool hasError = false;
+    bool inErrorRecoveryMode = false;
+    int lineErrors = 0;
     
     // Print table header for parsing steps
     cout << "\n\033[1;34m+-------------------------------+----------------------+------------------------+\033[0m";
@@ -90,9 +116,11 @@ void Parser::parseString(const string& input, int lineNum) {
                 break;
             } else {
                 cout << "| \033[31mError: Expected end of input\033[0m |";
-                errorCount++;
-                hasError = true;
-                break;
+                if (!inErrorRecoveryMode) {
+                    lineErrors++;
+                    inErrorRecoveryMode = true;
+                }
+                inputPos++;
             }
         }
 
@@ -101,11 +129,14 @@ void Parser::parseString(const string& input, int lineNum) {
             if (top == currentInput) {
                 cout << "| Match and advance       |";
                 inputPos++;
+                inErrorRecoveryMode = false; // Reset error recovery mode after successful match
             } else {
                 cout << "| \033[31mError: Expected '" << top << "'\033[0m |";
                 // Error recovery: Skip current input token
-                errorCount++;
-                hasError = true;
+                if (!inErrorRecoveryMode) {
+                    lineErrors++;
+                    inErrorRecoveryMode = true;
+                }
                 parsingStack.push(top); // Put back the token
                 inputPos++; // Skip the problematic input token
             }
@@ -118,8 +149,10 @@ void Parser::parseString(const string& input, int lineNum) {
             if (production.empty()) {
                 cout << "| \033[31mError: No production for (" << top << ", " << currentInput << ")\033[0m |";
                 // Error recovery: Skip the problematic non-terminal
-                errorCount++;
-                hasError = true;
+                if (!inErrorRecoveryMode) {
+                    lineErrors++;
+                    inErrorRecoveryMode = true;
+                }
                 inputPos++; // Skip input token
             } else {
                 // Format production for display
@@ -137,46 +170,30 @@ void Parser::parseString(const string& input, int lineNum) {
                         parsingStack.push(production[i]);
                     }
                 }
+                inErrorRecoveryMode = false; // Reset error recovery mode after successful production application
             }
         }
     }
     
-    cout << "\n\033[1;34m+-----------------------+----------------------+------------------------+\033[0m\n";
+    cout << "\n\033[1;34m+-------------------------------+----------------------+------------------------+\033[0m\n";
     
     // Final result for this line
-        if (hasError) {
-            cout << "\033[31mLine " << lineNum << ": Parsing failed with errors.\033[0m\n";
-        } else if (parsingStack.empty() && inputPos >= tokens.size() - 1) {  // Successfully processed all input
-            cout << "\033[32mLine " << lineNum << ": Parsing successful!\033[0m\n";
+    if (lineErrors > 0) {
+        cout << "\033[31mLine " << lineNum << ": Parsing failed with " << lineErrors << " error(s).\033[0m\n";
+        errorCount += lineErrors;
+    } else if (parsingStack.empty() && inputPos >= tokens.size() - 1) {  // Successfully processed all input
+        cout << "\033[32mLine " << lineNum << ": Parsing successful!\033[0m\n";
+    } else {
+        lineErrors++;
+        errorCount++;
+        cout << "\033[31mLine " << lineNum << ": Parsing failed. ";
+        
+        if (!parsingStack.empty()) {
+            cout << "Unexpected end of input. Expected: " << parsingStack.top() << "\033[0m\n";
+        } else if (inputPos < tokens.size() - 1) {
+            cout << "Extra input after parsing completed.\033[0m\n";
         } else {
-            errorCount++;
-            cout << "\033[31mLine " << lineNum << ": Parsing failed. ";
-            
-            if (!parsingStack.empty()) {
-                cout << "Unexpected end of input. Expected: " << parsingStack.top() << "\033[0m\n";
-            } else if (inputPos < tokens.size() - 1) {
-                cout << "Extra input after parsing completed.\033[0m\n";
-            } else {
-                cout << "Unknown error.\033[0m\n";
-            }
+            cout << "Unknown error.\033[0m\n";
         }
-}
-
-string Parser::getStackContents(stack<string> stk) {
-    string result = "";
-    vector<string> items;
-    
-    // Extract items from stack
-    while (!stk.empty()) {
-        items.push_back(stk.top());
-        stk.pop();
     }
-    
-    // Reconstruct the stack content string (in correct order from bottom to top)
-    for (int i = items.size() - 1; i >= 0; i--) {
-        result += items[i];
-        if (i > 0) result += " ";
-    }
-    
-    return result;
 }
